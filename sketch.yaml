@@ -1,0 +1,22 @@
+# arduino-cli sketch profile - pins the core and library versions so the build
+# is reproducible (locally and in CI).
+#   arduino-cli compile --profile default MeteoPlaneRadar
+#
+# The list below is the whole set of external dependencies - WebServer,
+# DNSServer, ESPmDNS and Update all come with the ESP32 core, so the config
+# portal and /update are served by the project itself. Neither WiFiManager nor
+# ElegantOTA is used any more; ElegantOTA is AGPL-3.0 and would have made every
+# binary built from this project AGPL too, so the whole project stays MIT.
+# Route lookups go to adsb.lol over plain HTTPClient - no extra library.
+# The firmware version lives in MeteoPlaneRadar/Version.h, not here.
+profiles:
+  default:
+    fqbn: esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M,PartitionScheme=custom,CDCOnBoot=cdc,FlashMode=qio
+    platforms:
+      - platform: esp32:esp32 (3.0.7)
+    libraries:
+      - GFX Library for Arduino (1.4.9)
+      - PNGdec (1.0.1)
+      - ArduinoJson (7.1.0)
+
+default_profile: default

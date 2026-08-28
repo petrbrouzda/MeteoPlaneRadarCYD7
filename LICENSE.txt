@@ -1,0 +1,144 @@
+MIT License
+
+Copyright (c) 2026 Petr / chiptron.cz
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+WHAT THE MIT LICENSE ABOVE COVERS
+
+The source code in this repository, and binaries built from it.
+
+Up to version 0.6.1 that was not the whole story: the firmware linked against
+ElegantOTA, an AGPL-3.0 library, which made every compiled binary AGPL-3.0
+rather than MIT. Version 0.6.2 removed it. The /update page is now built on the
+Update class from the ESP32 core, so there is no copyleft dependency left and
+MIT applies to the whole thing.
+
+The data is a separate matter - see below.
+
+---
+
+A KIND REQUEST (not a legal condition)
+
+The terms above already give you a lot of freedom, commercial use included.
+
+Beyond what the license requires, I would be genuinely glad if you kept the
+"chiptron.cz" credit visible on the settings screen - in the same size and
+color as in the original.
+
+It costs you nothing and it means a lot to me. But it is a request, not an
+obligation. If you decide otherwise, the license still applies in full.
+
+If you build something interesting on top of this, I would love to hear about
+it: https://chiptron.cz
+
+---
+
+BUNDLED THIRD-PARTY CODE
+
+This project includes the QRCode library by Richard Moore (ricmoo),
+licensed under the MIT License:
+https://github.com/ricmoo/QRCode
+
+---
+
+LIBRARIES USED BUT NOT REDISTRIBUTED
+
+These are installed from the Arduino Library Manager and are not part of this
+repository. They keep their own licenses, which apply to any binary you build
+and distribute.
+
+- GFX Library for Arduino (moononournation)
+- PNGdec (bitbank2)
+- ArduinoJson (bblanchon) - MIT
+
+All three are permissively licensed, so they place no conditions on what you do
+with a binary beyond keeping their own notices.
+
+REMOVED IN 0.6.2: ElegantOTA (ayushsharma82). Its open-source edition is
+AGPL-3.0, a strong copyleft license, and the MIT license above could not
+override it - every binary built from this project was therefore AGPL-3.0. The
+/update page is now our own, built on the core's Update class. If you re-add
+ElegantOTA to a fork, the copyleft obligations come back with it.
+
+This note is a factual pointer, not legal advice.
+
+---
+
+MAP DATA
+
+Map data (MeteoPlaneRadar/EuMapData.h and MeteoPlaneRadar/CzCitiesData.h) is
+derived from:
+
+- Natural Earth (https://www.naturalearthdata.com/) - country borders, 1:10m.
+  Public domain. Obtained via the world-atlas TopoJSON redistribution
+  (https://github.com/topojson/world-atlas), which is ISC licensed.
+
+- GeoNames (https://www.geonames.org/) - city locations and population.
+  Licensed under Creative Commons Attribution 4.0 (CC BY 4.0):
+  https://creativecommons.org/licenses/by/4.0/
+
+  ATTRIBUTION REQUIRED: if you redistribute this project or a derivative,
+  you must credit GeoNames. The notice above satisfies this.
+
+---
+
+DATA SOURCES USED AT RUNTIME
+
+The software fetches data from the following services. None of them are
+redistributed with this repository, but each has its own terms, and several
+require attribution. Please review them before any commercial deployment.
+
+- adsb.fi (https://adsb.fi/) - aircraft positions, registration and type.
+  Free, no API key. Intended for personal, non-commercial use.
+  Commercial products should arrange appropriate data access.
+
+- adsb.lol (https://adsb.lol/) - flight route for a callsign, together with a
+  plausibility check against the aircraft's position. Free, no registration.
+  The underlying route database is vradarserver/standing-data
+  (https://github.com/vradarserver/standing-data).
+  The API requires a User-Agent that identifies the caller and carries contact
+  information; see HTTP_USER_AGENT in MeteoPlaneRadar/Config.h and put your own
+  there if you fork this project.
+
+- CHMI / Cesky hydrometeorologicky ustav (https://opendata.chmi.cz/) -
+  precipitation radar composite for the Czech Republic.
+  ATTRIBUTION REQUIRED: the source must be credited when the data is used.
+
+- RainViewer (https://www.rainviewer.com/) - international precipitation radar.
+  Free, no API key, for personal, educational and small-scale community use.
+  ATTRIBUTION REQUIRED: RainViewer requires visible credit with a link back to
+  https://www.rainviewer.com/. Commercial use is arranged case by case.
+
+- Open-Meteo (https://open-meteo.com/) - current weather, forecast, sunrise and
+  sunset, air quality, pollen and city geocoding.
+  The free API is for NON-COMMERCIAL USE ONLY and the data is provided under
+  CC BY 4.0, so ATTRIBUTION IS REQUIRED. Rate limits apply (10,000 calls per
+  day, 5,000 per hour, 600 per minute). Commercial use requires a paid plan:
+  https://open-meteo.com/en/pricing
+
+- ip-api.com (https://ip-api.com/) - approximate location from the IP address.
+  The free endpoint is for non-commercial use.
+
+Note on attribution: the settings screen and this file credit the sources
+above. If you build a derivative with a different user interface, make sure the
+required credits (GeoNames, CHMI, RainViewer, Open-Meteo) remain visible
+somewhere the user can find them.
