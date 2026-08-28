@@ -17,6 +17,7 @@
 #include "Layout.h"
 #include "Lang.h"
 #include "Status.h"
+#include "Geo.h"
 
 #include <WiFi.h>
 #include <math.h>
@@ -242,6 +243,9 @@ void ScreenPlanes_Enter() {
   s_nextFetch = 0;
 }
 
+long lastDraw = 0;
+long adsb_last_fetch;
+
 bool ScreenPlanes_Tick() {
   if (WiFi.status() != WL_CONNECTED) { s_status = T(S_WIFI_WAIT); return false; }
 
@@ -254,6 +258,9 @@ bool ScreenPlanes_Tick() {
   if (millis() >= s_nextFetch) {
     s_status = T(S_DOWNLOADING);
     s_dataOk = ADSB_Fetch(Settings_Lat(), Settings_Lon(), currentRange());
+    if( s_dataOk ) {
+      adsb_last_fetch = millis();
+    }
     s_status = s_dataOk ? T(S_OK) : T(S_ERROR);
     // Normal cadence depends on range; after a failure back off to double the
     // interval rather than hammering the API at the normal rate.
@@ -275,9 +282,18 @@ bool ScreenPlanes_Tick() {
                          s_selMiss, DETAIL_GRACE_POLLS, s_selectedHex);
 #endif
     }
+    lastDraw = millis();
     return true;   // new data -> redraw
   }
-  return routeChanged;   // jinak kreslit jen kdyz dorazila trasa
+  if( routeChanged ) {
+    lastDraw = millis();
+    return true;
+  }
+  if ( millis()-lastDraw > SCREEN_PLANES_REFRESH ) {
+    lastDraw = millis();
+    return true;
+  }
+  return false;
 }
 
 // Short tap: with the detail open any tap closes it (the units toggle that used
@@ -320,6 +336,8 @@ void ScreenPlanes_RangeText(char* out, size_t cap) {
   if (!out || !cap) return;
   snprintf(out, cap, "%.0f %s", currentRange(), T(S_KM));
 }
+
+
 
 // Close the detail panel (called on the long-press screen switch).
 void ScreenPlanes_CloseDetail() { selectNone("dlouhy stisk / prepnuti obrazovky"); }
@@ -411,8 +429,24 @@ void ScreenPlanes_Draw() {
     if (watched) watchedSeen = true;
 
     if (!em && !watched && !passesFilter(list[i])) continue;
+
     int sx, sy;
-    project(list[i].lat, list[i].lon, Settings_Lat(), Settings_Lon(), range, &sx, &sy);
+    double lat, lon;
+    if( !list[i].hasTrack ) {
+      lat = list[i].lat;
+      lon = list[i].lon;
+    } else {
+      Geo_ProjectPosition(
+          list[i].lat,
+          list[i].lon,
+          list[i].gsKt,
+          list[i].track,
+          (millis()-adsb_last_fetch)/1000.0f,
+          &lat,
+          &lon
+      );
+    }
+    project(lat, lon, Settings_Lat(), Settings_Lon(), range, &sx, &sy);
     int dx = sx - R_CX, dy = sy - R_CY;
     if (dx * dx + dy * dy > R_RADIUS * R_RADIUS) continue;   // outside the circle
     // Store position *and* identity, so a tap resolves to an aircraft and not

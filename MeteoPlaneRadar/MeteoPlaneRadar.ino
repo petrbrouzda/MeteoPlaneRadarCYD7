@@ -215,7 +215,6 @@ static void enterActive() {
     case SCREEN_FORECAST_I: ScreenForecast_Enter(); break;
     case SCREEN_SETTINGS_I: ScreenSettings_Enter(); break;
   }
-  Serial.println("drawActive 3");
   drawActive();
 }
 
@@ -468,7 +467,6 @@ void loop() {
     const int rng = WebConfig_TakeRangeStep();
     if (rng) {
       activeChangeRange(rng);
-      Serial.println("drawActive 1");
       drawActive();
     }
   }
@@ -498,7 +496,6 @@ void loop() {
   static unsigned long lastDraw = 0;
   bool wantDraw = activeTick();
   if (wantDraw && millis() - lastDraw >= 80) {
-    Serial.println("drawActive 2");
     drawActive();
     lastDraw = millis();
   }

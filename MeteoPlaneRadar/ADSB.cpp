@@ -19,6 +19,7 @@
 #include "Status.h"          // one-line health note for the web status page
 #include "Config.h"          // SQUAWK_*
 
+
 static const float KM_PER_NM = 1.852f;
 
 static Aircraft s_list[ADSB_MAX];   // last GOOD snapshot shown on screen

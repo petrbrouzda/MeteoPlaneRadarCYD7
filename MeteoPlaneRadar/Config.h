@@ -59,9 +59,9 @@
 // Poll interval by range - larger areas return more data and are less
 // time-critical, so they are polled less often (easier on the free API).
 // After a failed fetch the interval is doubled.
-#define ADSB_PERIOD_NEAR_MS  5000    // up to  ADSB_NEAR_KM
-#define ADSB_PERIOD_MID_MS  10000    // up to  ADSB_MID_KM
-#define ADSB_PERIOD_FAR_MS  15000    // beyond ADSB_MID_KM
+#define ADSB_PERIOD_NEAR_MS 120000    // up to  ADSB_NEAR_KM
+#define ADSB_PERIOD_MID_MS  120000    // up to  ADSB_MID_KM
+#define ADSB_PERIOD_FAR_MS  180000    // beyond ADSB_MID_KM
 #define ADSB_NEAR_KM 25.0f
 #define ADSB_MID_KM  50.0f
 
@@ -362,6 +362,8 @@
 #define SQUAWK_HIJACK "7500"
 #define SQUAWK_RADIO  "7600"
 #define SQUAWK_EMERG  "7700"
+
+#define SCREEN_PLANES_REFRESH 1000
 
 // ---------------------------------------------------------------------------
 //  Layout self-check
