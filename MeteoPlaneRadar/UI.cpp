@@ -13,6 +13,7 @@
 #include "qrcode.h"
 #include "Config.h"
 
+
 void UI_TextCenteredIn(const char* text, int x, int w, int cy,
                        uint16_t color, uint8_t size) {
   int16_t x1, y1; uint16_t tw, th;
@@ -28,7 +29,7 @@ void UI_TextCentered(const char* text, int cy, uint16_t color, uint8_t size) {
   UI_TextCenteredIn(text, 0, LCD_WIDTH, cy, color, size);
 }
 
-int UI_ChordHalfWidth(int y) {
+static int UI_ChordHalfWidth(int y) {
   const int R = LCD_WIDTH / 2 - 2;          // same margin as the screens use
   long dy = (long)y - LCD_HEIGHT / 2;
   long d2 = (long)R * R - dy * dy;

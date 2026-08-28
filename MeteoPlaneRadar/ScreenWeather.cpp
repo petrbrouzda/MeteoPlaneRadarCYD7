@@ -296,8 +296,7 @@ static bool rebuildCrops() {
 static void loadAndBuild() {
   s_loading = true;
   ScreenWeather_Draw();          // last good frame + the note
-  // gfx->flush();
-  gfx->pushSprite(0, 0);
+  gfx->flush();
 
   const int prevCount = s_frameCount;   // what we already have on screen
   int n = CHMU_FetchAnim(ANIM_FRAMES);
@@ -483,6 +482,16 @@ static bool tickRainViewer() {
     return true;
   }
 
+  // Nothing came back last time. RainViewer_Begin() will not re-arm on its own
+  // - the view has not changed - so without this the radar stayed empty until
+  // the range was changed or the device rebooted.
+  if (s_lastFail && RainViewer_Count() == 0 && (now - s_lastFetch >= RADAR_RETRY_MS)) {
+    RainViewer_Refresh();
+    s_loading   = true;
+    s_lastFetch = now;
+    return true;
+  }
+
   const int n = RainViewer_Count();
   if (n <= 0) return false;
 
@@ -518,8 +527,11 @@ bool ScreenWeather_Tick() {
     return true;
   }
 
-  // First load.
+  // First load. A failing index fetch leaves s_frameCount at 0, so without the
+  // delay the whole listing was re-fetched on the very next tick - once a
+  // second, every second.
   if (s_frameCount == 0) {
+    if (s_lastFail && (now - s_lastFetch < RADAR_RETRY_MS)) return false;
     loadAndBuild();
     s_lastFetch = now; s_curFrame = 0; s_gap = false; s_lastStep = now;
     return true;

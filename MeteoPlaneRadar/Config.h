@@ -65,6 +65,24 @@
 #define ADSB_NEAR_KM 25.0f
 #define ADSB_MID_KM  50.0f
 
+// WiFiClientSecure defaults the mbedTLS handshake to 120 s, six times
+// WDT_TIMEOUT_S. setConnectTimeout() does NOT cover it - that only bounds the
+// TCP connect (and without it the connect itself defaults to 30 s, also over
+// the watchdog). The handshake loop in ssl_client.cpp has its own limit and
+// runs inside http.GET(), where nothing feeds the watchdog. Seconds, not ms.
+#define NET_TLS_HANDSHAKE_S 8
+
+// Wall-clock ceiling for receiving one body. HTTPClient::writeToStreamDataBlock
+// spins on delay(1) with no timeout of its own, so a server that stops sending
+// while holding the socket open would hang until the hardware watchdog fires.
+// The sink enforces this instead and the previous data stays on screen.
+#define NET_BODY_BUDGET_MS 15000UL
+
+// Strop pro textove odpovedi ctene pres Net_GetString(). Nejvetsi z nich (index
+// RainVieweru) ma nizke desitky kB. Strop je tu proto, aby rostouci odpoved dala
+// o sobe vedet radkem v logu, misto aby tise ujidala pamet.
+#define NET_MAX_TEXT (128 * 1024)
+
 // ---------------------------------------------------------------------------
 //  Weather radar (CHMU)
 // ---------------------------------------------------------------------------
@@ -116,10 +134,6 @@
 #define ROUTE_API_BASE "https://api.adsb.lol/api/0/route"
 #define ROUTE_CACHE_N  8     // remembered answers (keyed on the callsign)
 
-// ---------------------------------------------------------------------------
-//  OTA (firmware update over WiFi)
-// ---------------------------------------------------------------------------
-#define OTA_IDLE_MS 300000UL   // leave OTA mode after this long with no upload
 
 // ---------------------------------------------------------------------------
 //  Map orientation
@@ -197,9 +211,6 @@
 // pripadne stiznosti na cizi adresu.
 #define HTTP_USER_AGENT "MeteoPlaneRadar/" FW_VERSION " (+https://chiptron.cz)"
 
-// The WiFi portal blocks the whole sketch and the watchdog is suspended while
-// it runs, so this timeout is what keeps it from blocking forever.
-#define PORTAL_TIMEOUT_S 180
 
 // ---------------------------------------------------------------------------
 //  Aircraft detail
@@ -267,6 +278,12 @@
 #define RADAR_SRC_CHMU       0
 #define RADAR_SRC_RAINVIEWER 1
 
+// Prodleva mezi pokusy o data meteoradaru, kdyz zadna nejsou. Plati pro oba
+// zdroje: u CHMU bez ni slo prvni nacteni znovu pri kazdem pruchodu smyckou,
+// tedy cely vypis kazdou vterinu; u RainVieweru se naopak po neuspechu nezkusilo
+// nic a radar zustal prazdny az do zmeny dosahu nebo restartu.
+#define RADAR_RETRY_MS 60000UL
+
 // RainViewer: free, no key, non-commercial. The JSON lists the available
 // frames, the tiles come from the tile cache in standard Web Mercator z/x/y.
 #define RV_INDEX_URL "https://api.rainviewer.com/public/weather-maps.json"
@@ -287,7 +304,6 @@
 #define RV_MAX_ZOOM  7
 #define RV_MAX_SCALE 8          // 1, 2, 4 or 8 display pixels per tile pixel
 
-#define RV_MAX_TILES 12         // tiles fetched per frame (3x4 worst case)
 
 // A tile that fails is retried before the frame gives up on it. Without this a
 // single dropped connection leaves a permanent black square in the picture.
