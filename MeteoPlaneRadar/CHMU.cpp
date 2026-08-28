@@ -147,7 +147,10 @@ bool CHMU_FetchLatest() {
   if (latest == s_lastName && s_hasSnapshot) return true;
   if (!s_pngBuf) {
     s_pngBuf = (uint8_t*)heap_caps_malloc(CHMU_MAX_PNG, MALLOC_CAP_SPIRAM);
-    if (!s_pngBuf) s_pngBuf = (uint8_t*)malloc(CHMU_MAX_PNG);
+    if (!s_pngBuf) {
+      Serial.println("CHMU: nelze naalokovat PSRAM, zkusim RAM");
+      s_pngBuf = (uint8_t*)malloc(CHMU_MAX_PNG);
+    }
   }
   if (downloadNameTo(latest, s_pngBuf, CHMU_MAX_PNG, &s_pngSize)) { s_lastName = latest; s_hasSnapshot = true; return true; }
   return s_hasSnapshot;
@@ -201,7 +204,10 @@ static void scanChunkTop(const String& text) {
 static bool ensureAnimBuffer(int i) {
   if (s_animBuf[i]) return true;
   s_animBuf[i] = (uint8_t*)heap_caps_malloc(CHMU_MAX_PNG, MALLOC_CAP_SPIRAM);
-  if (!s_animBuf[i]) s_animBuf[i] = (uint8_t*)malloc(CHMU_MAX_PNG);
+  if (!s_animBuf[i]) {
+    Serial.println("CHMU: nelze naalokovat PSRAM, zkusim RAM");
+    s_animBuf[i] = (uint8_t*)malloc(CHMU_MAX_PNG);
+  }
   return s_animBuf[i] != nullptr;
 }
 

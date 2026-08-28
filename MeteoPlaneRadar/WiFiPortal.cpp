@@ -42,6 +42,7 @@ void WiFi_DrawApScreen() {
   UI_TextCentered(en ? "Waiting for your network..."
                      : "Cekam na zadani site...", 348, C_YELLOW, 1);
   // gfx->flush();
+  gfx->pushSprite(0, 0);
 }
 
 static void drawConnecting(const char* ssid) {
@@ -51,6 +52,7 @@ static void drawConnecting(const char* ssid) {
                   LCD_HEIGHT / 2 - 20, C_WHITE, 2);
   if (ssid && *ssid) UI_TextCentered(ssid, LCD_HEIGHT / 2 + 12, C_CYAN, 2);
   // gfx->flush();
+  gfx->pushSprite(0, 0);
 }
 
 // --- Access point -----------------------------------------------------------

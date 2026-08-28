@@ -126,9 +126,8 @@ Using library Hash at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Ar
 static LGFX lcd;  
 LGFX * gfxReal = &lcd;
 
-static LGFX_Sprite sprite(&lcd); // スプライトを使う場合はLGFX_Spriteのインスタンスを作成。
+static LGFX_Sprite sprite(&lcd); 
 LGFX_Sprite * gfx = &sprite;
-
 
 
 // yield() during long network transfers, feed the watchdog so multi-second
@@ -144,12 +143,14 @@ static void checkBootReset() {
   if (digitalRead(BOOT_PIN) != LOW) return;
   gfx->fillScreen(C_BLACK);
   UI_TextCentered("Drzte pro reset...", LCD_HEIGHT / 2, C_WHITE, 2);
-  gfx->flush();
+  // gfx->flush();
+  gfx->pushSprite(0, 0);
   unsigned long start = millis();
   while (digitalRead(BOOT_PIN) == LOW) {
     if (millis() - start >= 3000) {
       UI_TextCentered("Mazu nastaveni", LCD_HEIGHT / 2 + 30, C_RED, 2);
-      gfx->flush();
+      // gfx->flush();
+      gfx->pushSprite(0, 0);
       Settings_ClearAll();
       delay(800);
       ESP.restart();
@@ -204,7 +205,7 @@ static void drawActive() {
   }
   drawScreenDots();
   // gfx->flush();    // hand the framebuffer over; Canvas16 switches to the other
-  sprite.pushSprite(0, 0);
+  gfx->pushSprite(0, 0);
 }
 
 static void enterActive() {
@@ -348,21 +349,25 @@ void setup() {
   applyTimezone();
   Layout_SelfTest();         // no-op unless LAYOUT_DEBUG is on
 
-  lcd.init();
+  gfxReal->init();
+  Serial.printf("Volna pamet: %u B\n", (unsigned)ESP.getFreeHeap());
+
   // brightness lze nastavit pouze na fyzickem zarizeni
-  lcd.setBrightness(128);
-  lcd.setColorDepth(16); 
-  lcd.setRotation(0);
+  gfxReal->setBrightness(128);
+  gfxReal->setColorDepth(16); 
+  gfxReal->setRotation(0);
 
   // inicializace canvasu
-  sprite.setPsram(true);
-  sprite.createSprite(lcd.width(), lcd.height() );
-  sprite.setColorDepth(16); 
+  gfx->setPsram(true);
+  gfx->createSprite(gfxReal->width(), gfxReal->height() );
+  Serial.printf("Volna pamet: %u B\n", (unsigned)ESP.getFreeHeap());
+  gfx->setColorDepth(16); 
 
 //  gfx->setRotation(0);
   gfx->setTextWrap(false);
   gfx->fillScreen(C_BLACK);
-  gfx->flush();
+  //gfx->flush();
+  gfx->pushSprite(0, 0);
   NightMode_Apply();          // now there is something to look at
 
   checkBootReset();

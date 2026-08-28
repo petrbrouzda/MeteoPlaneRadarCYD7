@@ -297,6 +297,7 @@ static void loadAndBuild() {
   s_loading = true;
   ScreenWeather_Draw();          // last good frame + the note
   // gfx->flush();
+  gfx->pushSprite(0, 0);
 
   const int prevCount = s_frameCount;   // what we already have on screen
   int n = CHMU_FetchAnim(ANIM_FRAMES);

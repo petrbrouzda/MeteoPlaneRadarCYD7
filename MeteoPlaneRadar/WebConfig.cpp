@@ -366,6 +366,7 @@ static void otaStart() {
   UI_TextCentered(en ? "Do not disconnect power" : "Neodpojuj napajeni",
                   LCD_HEIGHT / 2 + 20, C_GRAY, 1);
   // gfx->flush();
+  gfx->pushSprite(0, 0);
   delay(700);
   //TODO
   // Set_Backlight(0);
@@ -379,6 +380,7 @@ static void otaEnd(bool ok) {
                      : (en ? "Update failed"       : "Aktualizace selhala"),
                   LCD_HEIGHT / 2, ok ? C_GREEN : C_RED, 2);
   // gfx->flush();
+  gfx->pushSprite(0, 0);
   s_updating = false;
 }
 
