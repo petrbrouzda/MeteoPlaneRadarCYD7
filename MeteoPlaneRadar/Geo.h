@@ -12,6 +12,11 @@ void Geo_ProjectPosition(double latitude, double longitude,
                          double seconds, double* resultLatitude,
                          double* resultLongitude);
 
+// Returns the distance in kilometers between two geographic coordinates.
+// Input coordinates are in degrees latitude/longitude.
+double Geo_DistanceKm(double latitude1, double longitude1,
+                      double latitude2, double longitude2);
+
 #ifdef __cplusplus
 }
 #endif

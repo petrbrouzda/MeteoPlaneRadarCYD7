@@ -40,6 +40,7 @@ struct Aircraft {
   char  squawk[6] = "";
   bool  onGround = false;
   bool  hasTrack = false;     // false = track unknown (drawn differently)
+  char  desc[20] = "";    
 };
 
 void   ADSB_SetPollFn(void (*fn)());

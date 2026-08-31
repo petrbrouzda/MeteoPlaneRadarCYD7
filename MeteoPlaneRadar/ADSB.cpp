@@ -169,6 +169,7 @@ static void fillFields(JsonObject o) {
   o["t"]            = true;
   o["r"]            = true;   // registration - free, in the same answer
   o["squawk"]       = true;
+  o["desc"]       = true;
 }
 
 static void buildFilter(JsonDocument& filter) {
@@ -343,6 +344,11 @@ bool ADSB_Fetch(double lat, double lon, float radiusKm) {
       const char* ty = plane["t"] | "";
       strncpy(s_tmp[n].type, ty, sizeof(s_tmp[n].type) - 1);
       s_tmp[n].type[sizeof(s_tmp[n].type) - 1] = '\0';
+
+      const char* desc = plane["desc"] | "";
+      strncpy(s_tmp[n].desc, desc, sizeof(s_tmp[n].desc) - 1);
+      s_tmp[n].desc[sizeof(s_tmp[n].desc) - 1] = '\0';
+
       // Registration, same deal - "r" is carried in this very answer, so no
       // second API is needed to put "OK-TVU" next to the type.
       const char* rg = plane["r"] | "";

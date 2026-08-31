@@ -51,7 +51,7 @@
   X(S_SPEED,         "Rychlost",           "Rychlost",           "Speed") \
   X(S_TRACK,         "Kurz",               "Kurz",               "Track") \
   X(S_CLIMB,         "Stoupani",           "Stoupání",           "Climb") \
-  X(S_TYPE,          "Typ",                "Typ",                "Type") \
+  X(S_TYPE,          "ID",                 "ID",                 "Type") \
   X(S_FROM,          "Z",                  "Z",                  "From") \
   X(S_TO,            "Do",                 "Do",                 "To") \
   X(S_ROUTE_WAIT,    "zjistuji trasu",     "zjišťuji trasu",     "looking up route") \

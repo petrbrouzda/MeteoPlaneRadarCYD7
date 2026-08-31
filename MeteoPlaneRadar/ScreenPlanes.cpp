@@ -416,6 +416,10 @@ void ScreenPlanes_Draw() {
   const char* alertCode = nullptr;    // worst emergency seen this frame
   bool watchedSeen = false;
 
+  double minDistance = 6000;
+  int nearestAirplane = -1;
+  int nearestX, nearestY;
+
   for (int i = 0; i < n; i++) {
     s_planeX[i] = -9999; s_planeY[i] = -9999;   // default: off-screen
     s_planeHex[i][0] = '\0';
@@ -446,7 +450,18 @@ void ScreenPlanes_Draw() {
           &lon
       );
     }
+
     project(lat, lon, Settings_Lat(), Settings_Lon(), range, &sx, &sy);
+
+    double distance = Geo_DistanceKm( lat, lon, Settings_Lat(), Settings_Lon() );
+    // Serial.printf( " - %d: %.1f km\n", i, distance );
+    if( distance<minDistance ) {
+      minDistance = distance;
+      nearestAirplane = i;
+      nearestX = sx;
+      nearestY = sy;
+    }
+
     int dx = sx - R_CX, dy = sy - R_CY;
     if (dx * dx + dy * dy > R_RADIUS * R_RADIUS) continue;   // outside the circle
     // Store position *and* identity, so a tap resolves to an aircraft and not
@@ -607,25 +622,17 @@ void ScreenPlanes_Draw() {
   // latest fetch (altitude, speed and climb rate update live while it is open).
   // Keep a copy of the selected aircraft so the panel can still be drawn while
   // the aircraft is temporarily missing from the data (grace period).
-  if (selIdx >= 0 && selIdx < n) { s_selCache = list[selIdx]; s_selCacheOk = true; }
-  const bool signalLost = (selIdx < 0) && s_selCacheOk;
-
-  if (ScreenPlanes_DetailOpen() && s_selCacheOk) {
+  if (nearestAirplane >= 0 && nearestAirplane < n) { 
+    s_selCache = list[nearestAirplane]; 
     const Aircraft& ac = s_selCache;
     const bool metric = Settings_MetricUnits();
 
+    gfx->drawCircle(nearestX+1, nearestY+2, 16, C_RED );   // highlight the nearest aircraft
+
     // Panel centred so it fits inside the round display.
     const int pw = 320, ph = 260;
-    const int px = R_CX - pw / 2;
-    const int py = R_CY - ph / 2;
-    gfx->fillRoundRect(px, py, pw, ph, 14, C_DKGRAY);
-    gfx->drawRoundRect(px, py, pw, ph, 14, C_CYAN);
-
-    // Close button in the top-right corner.
-    int cxx = px + pw - 24, cyy = py + 22;
-    gfx->fillCircle(cxx, cyy, 15, C_RED);
-    gfx->drawLine(cxx - 6, cyy - 6, cxx + 6, cyy + 6, C_WHITE);
-    gfx->drawLine(cxx - 6, cyy + 6, cxx + 6, cyy - 6, C_WHITE);
+    const int px = 480;
+    const int py = 50;
 
     // Callsign (heading).
     gfx->setTextSize(3); gfx->setTextColor(C_YELLOW);
@@ -639,6 +646,45 @@ void ScreenPlanes_Draw() {
     char line[44];
     int ty = py + 56;
     gfx->setTextSize(2); gfx->setTextColor(C_WHITE);
+
+    const char* desc = ac.desc[0] ? ac.desc : nullptr;
+    if (desc) {
+      snprintf(line, sizeof(line), "%s", desc );
+      // The label plus a long type plus a registration can outgrow the panel.
+      int maxCh = (pw - 36) / 12;
+      if ((int)strlen(line) > maxCh) { line[maxCh - 1] = '.'; line[maxCh] = '\0'; }
+      gfx->setCursor(px + 18, ty); gfx->print(line);
+    }
+    ty += 26;
+
+    if( desc ) {
+      if( ac.reg[0] ) {
+        snprintf(line, sizeof(line), "%s: %s", T(S_TYPE),
+                ac.reg[0] ? ac.reg : "");
+        // The label plus a long type plus a registration can outgrow the panel.
+        int maxCh = (pw - 36) / 12;
+        if ((int)strlen(line) > maxCh) { line[maxCh - 1] = '.'; line[maxCh] = '\0'; }
+        gfx->setCursor(px + 18, ty); gfx->print(line);
+        ty += 26;
+      }
+    } else {
+
+      // Type and registration share a row - the route below needs two lines and
+      // this is where they come from. Both come straight from adsb.fi ("t" and
+      // "r"), so neither costs an extra request; either can be missing.
+      const char* typ = ac.type[0] ? ac.type : nullptr;
+      if (typ || ac.reg[0]) {
+        snprintf(line, sizeof(line), "%s: %s%s%s", T(S_TYPE),
+                typ ? typ : "?",
+                ac.reg[0] ? "  " : "",
+                ac.reg[0] ? ac.reg : "");
+        // The label plus a long type plus a registration can outgrow the panel.
+        int maxCh = (pw - 36) / 12;
+        if ((int)strlen(line) > maxCh) { line[maxCh - 1] = '.'; line[maxCh] = '\0'; }
+        gfx->setCursor(px + 18, ty); gfx->print(line);
+        ty += 26;
+      }
+  }    
 
     // Altitude: ft or m.
     if (metric) snprintf(line, sizeof(line), "%s: %.0f m", T(S_ALTITUDE), ac.altFt * 0.3048f);
@@ -660,7 +706,7 @@ void ScreenPlanes_Draw() {
     const char* ar = ac.baroRate > 100 ? "^" : (ac.baroRate < -100 ? "v" : "-");
     if (metric) snprintf(line, sizeof(line), "%s: %.1f m/s %s", T(S_CLIMB), ac.baroRate * 0.00508f, ar);
     else        snprintf(line, sizeof(line), "%s: %.0f ft/m %s", T(S_CLIMB), ac.baroRate, ar);
-    gfx->setCursor(px + 18, ty); gfx->print(line); ty += 26;
+    gfx->setCursor(px + 18, ty); gfx->print(line); ty += 28;
 
     // Ask where this flight is going. The position goes with the request: the
     // server uses it to reject a route that does not fit where the aircraft
@@ -670,21 +716,8 @@ void ScreenPlanes_Draw() {
     Route_Select(ac.callsign, ac.lat, ac.lon);
     const RouteInfo* rt = Route_Get();
 
-    // Type and registration share a row - the route below needs two lines and
-    // this is where they come from. Both come straight from adsb.fi ("t" and
-    // "r"), so neither costs an extra request; either can be missing.
-    const char* typ = ac.type[0] ? ac.type : nullptr;
-    if (typ || ac.reg[0]) {
-      snprintf(line, sizeof(line), "%s: %s%s%s", T(S_TYPE),
-               typ ? typ : "?",
-               ac.reg[0] ? "  " : "",
-               ac.reg[0] ? ac.reg : "");
-      // The label plus a long type plus a registration can outgrow the panel.
-      int maxCh = (pw - 36) / 12;
-      if ((int)strlen(line) > maxCh) { line[maxCh - 1] = '.'; line[maxCh] = '\0'; }
-      gfx->setCursor(px + 18, ty); gfx->print(line);
-    }
-    ty += 28;
+    
+
 
     // Route on TWO lines - "Z:" above "Do:". One line with an arrow between
     // the cities had to shrink to fit two names side by side and ended up
@@ -722,6 +755,7 @@ void ScreenPlanes_Draw() {
     }
     gfx->setTextSize(2); gfx->setTextColor(C_WHITE);
 
+    /*
     // While the aircraft is missing from the data (grace period) say so, so the
     // frozen values are not mistaken for live ones.
     if (signalLost) {
@@ -730,6 +764,7 @@ void ScreenPlanes_Draw() {
       gfx->setCursor(px + pw - 18 - (int)strlen(lost) * 6, py + ph - 18);
       gfx->print(lost);
     }
+      */
 
     // The units toggle used to live here. It moved to the settings screen -
     // it is a preference, not something you change per aircraft, and the panel

@@ -33,3 +33,24 @@ void Geo_ProjectPosition(double latitude, double longitude,
   *resultLatitude = lat2 * radiansToDegrees;
   *resultLongitude = lon2 * radiansToDegrees;
 }
+
+double Geo_DistanceKm(double latitude1, double longitude1,
+                      double latitude2, double longitude2) {
+  const double degreesToRadians = 0.017453292519943295;
+  const double earthRadiusKm = 6371.0;
+
+  const double lat1 = latitude1 * degreesToRadians;
+  const double lon1 = longitude1 * degreesToRadians;
+  const double lat2 = latitude2 * degreesToRadians;
+  const double lon2 = longitude2 * degreesToRadians;
+
+  const double deltaLat = lat2 - lat1;
+  const double deltaLon = lon2 - lon1;
+
+  const double a = sin(deltaLat / 2.0) * sin(deltaLat / 2.0) +
+                  cos(lat1) * cos(lat2) *
+                  sin(deltaLon / 2.0) * sin(deltaLon / 2.0);
+
+  const double c = 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
+  return earthRadiusKm * c;
+}
