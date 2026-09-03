@@ -52,8 +52,6 @@ struct RouteInfo {
 // Poloha se posila spolu s callsignem, server podle ni pocita "plausible".
 void       Route_Select(const char* callsign, float lat, float lon);
 
-// Nic neni vybrano - zrus cekajici dotaz.
-void       Route_Clear();
 
 // Provede cekajici dotaz. Vola se z loop(); bez dotazu nedela nic.
 void       Route_Tick();
@@ -63,11 +61,6 @@ void       Route_Tick();
 // WDT_TIMEOUT_S, a zarizeni se restartuje uprostred stahovani.
 void       Route_SetPollFn(void (*fn)());
 
-RouteState Route_GetState();
-const RouteInfo* Route_Get();   // platne, dokud je stav ROUTE_OK
+RouteState Route_GetState( const char* callsign );
+const RouteInfo* Route_Get( const char* callsign );   // platne, dokud je stav ROUTE_OK
 
-// Vrati true prave jednou po tom, co Route_Tick() dopsal vysledek, a priznak
-// tim zhasne. Obrazovka se prekresluje jen kdyz ma co ukazat noveho, a bez
-// tohohle by na odpoved cekala az na dalsi stahovani letadel - tedy podle
-// dosahu 5 az 15 sekund, i kdyz trasa dorazila hned.
-bool       Route_TakeChanged();

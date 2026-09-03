@@ -59,11 +59,11 @@
 // Poll interval by range - larger areas return more data and are less
 // time-critical, so they are polled less often (easier on the free API).
 // After a failed fetch the interval is doubled.
-#define ADSB_PERIOD_NEAR_MS 120000    // up to  ADSB_NEAR_KM
-#define ADSB_PERIOD_MID_MS  120000    // up to  ADSB_MID_KM
-#define ADSB_PERIOD_FAR_MS  180000    // beyond ADSB_MID_KM
-#define ADSB_NEAR_KM 25.0f
-#define ADSB_MID_KM  50.0f
+#define ADSB_PERIOD_NEAR_MS 60000    // up to  ADSB_NEAR_KM
+#define ADSB_PERIOD_MID_MS  100000    // up to  ADSB_MID_KM
+#define ADSB_PERIOD_FAR_MS  150000    // beyond ADSB_MID_KM
+#define ADSB_NEAR_KM 15.0f
+#define ADSB_MID_KM  30.0f
 
 // WiFiClientSecure defaults the mbedTLS handshake to 120 s, six times
 // WDT_TIMEOUT_S. setConnectTimeout() does NOT cover it - that only bounds the

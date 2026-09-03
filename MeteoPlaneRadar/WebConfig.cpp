@@ -530,6 +530,9 @@ static void handleUpdateDone() {
   s_updErr = "";
 }
 
+
+char webUrl[64] = "";
+
 // --- Lifecycle --------------------------------------------------------------
 void WebConfig_Begin(bool apMode) {
   s_apMode = apMode;
@@ -547,8 +550,8 @@ void WebConfig_Begin(bool apMode) {
     } else {
       s_dns.stop();
       if (MDNS.begin(WEB_HOSTNAME)) MDNS.addService("http", "tcp", WEB_PORT);
-      Serial.printf("Web: http://%s.local/ nebo http://%s/\n",
-                    WEB_HOSTNAME, WiFi.localIP().toString().c_str());
+      sprintf( webUrl, "http://%s/", WiFi.localIP().toString().c_str() );
+      Serial.printf("Web: http://%s.local/ nebo %s\n", WEB_HOSTNAME, webUrl );
     }
     return;
   }
@@ -582,8 +585,9 @@ void WebConfig_Begin(bool apMode) {
   } else {
     if (MDNS.begin(WEB_HOSTNAME)) {
       MDNS.addService("http", "tcp", WEB_PORT);
-      Serial.printf("Web: http://%s.local/ nebo http://%s/\n",
-                    WEB_HOSTNAME, WiFi.localIP().toString().c_str());
+      sprintf( webUrl, "http://%s/", WiFi.localIP().toString().c_str() );
+      Serial.printf("Web: http://%s.local/ nebo %s\n",
+                    WEB_HOSTNAME, webUrl );
     } else {
       Serial.printf("Web: http://%s/  (mDNS se nespustilo)\n",
                     WiFi.localIP().toString().c_str());

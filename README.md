@@ -7,13 +7,14 @@ Není obsluha dotyku, neb moje cílové zařízení je nedotykové.
 
 Změny proti originálu pro 2.1" displej:
 * přechod na vektorové fonty a češtinu
+* automatický zoom, který se snaží na obrazovce udržet 10-15 letadel
 * label letadla se kreslí s backgroundem, takže přepisuje popisky a čáry na pozadí
 * letadla se vykreslují od nejbližšího k nejvzdálenějšímu
 * vypisují se detaily tří nejbližších letadel
-* automatický zoom, který se snaží na obrazovce udržet 10-15 letadel
 * i pro značku letadla se zarezervuje prostor v Layoutu, aby jí popisky ostatních letadel nepřepsaly
 * vypisuje se dlouhý typ letadla (celý popis ve stylu "Boeing B373-800")
-
+* vpravo dole se vypisuje, z jak dlouho se načtou nová data (a první dvě minuty URL na konfiguraci)
+* extrapolace výšky letadla
 
 TODO: Doplnit readme. 
 

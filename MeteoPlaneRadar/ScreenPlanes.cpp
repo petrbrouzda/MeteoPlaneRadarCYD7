@@ -99,7 +99,6 @@ static void selectNone(const char* reason) {
   s_selectedHex[0] = '\0';
   s_selMiss = 0;
   s_selCacheOk = false;
-  Route_Clear();
 }
 static void selectHex(const char* hex) {
   strncpy(s_selectedHex, hex, sizeof(s_selectedHex) - 1);
@@ -258,12 +257,6 @@ float lastRangeFetched = 0;
 bool ScreenPlanes_Tick() {
   if (WiFi.status() != WL_CONNECTED) { s_status = T(S_WIFI_WAIT); return false; }
 
-  // Odpoved na trasu prijde nezavisle na stahovani letadel, obvykle do vteriny
-  // po klepnuti. Bez tohohle by se dokreslila az s pristim pollem, takze u
-  // stredniho dosahu az o deset sekund pozdeji, a panel by mezitim zbytecne
-  // ukazoval "zjistuji trasu". Ctenim priznak zhasne, takze to prekresli jednou.
-  bool routeChanged = Route_TakeChanged();
-
   if (millis() >= s_nextFetch) {
     s_status = T(S_DOWNLOADING);
     // range zaokrouhlíme na 10 km nahoru
@@ -296,10 +289,6 @@ bool ScreenPlanes_Tick() {
     }
     lastDraw = millis();
     return true;   // new data -> redraw
-  }
-  if( routeChanged ) {
-    lastDraw = millis();
-    return true;
   }
   if ( millis()-lastDraw > SCREEN_PLANES_REFRESH ) {
     lastDraw = millis();
@@ -371,7 +360,7 @@ int colorByOrder(int x)
 int aircraft_detail_y;
 
 
-void display_aircraft_detail(Aircraft ac, int headerColor, float vzdalenost_km )
+void display_aircraft_detail(Aircraft ac, int headerColor, float vzdalenost_km , double lat, double lon, float feets )
 {
     const bool metric = Settings_MetricUnits();
     gfx->setTextSize(1);
@@ -418,11 +407,11 @@ void display_aircraft_detail(Aircraft ac, int headerColor, float vzdalenost_km )
 
     // Altitude: ft or m. + baro rate
     sprintf( line, "%s: ", TW(S_ALTITUDE) );
-    if (metric) sprintf(line + strlen(line), "%.0f m", ac.altFt * 0.3048f);
-    else        sprintf(line + strlen(line), "%.0f ft", ac.altFt);
+    if (metric) sprintf(line + strlen(line), "%.0f m", feets * 0.3048f);
+    else        sprintf(line + strlen(line), "%.0f ft", feets );
     // Climb/descent - short label + units so the line does not overflow.
     // An arrow instead of the words "climbing/descending".
-    const char* ar = ac.baroRate > 100 ? "stoupá" : (ac.baroRate < -100 ? "klesá" : " ");
+    const char* ar = ac.baroRate > 100 ? "stoupá" : (ac.baroRate < -100 ? "klesá" : "" );
     /* if (metric) sprintf(line + strlen(line), ", %.1f m/s %s", ac.baroRate * 0.00508f, ar);
     else        sprintf(line + strlen(line), ", %.0f ft/m %s", ac.baroRate, ar); */
     // vertikální rychlost vždy ve ft/min
@@ -443,8 +432,10 @@ void display_aircraft_detail(Aircraft ac, int headerColor, float vzdalenost_km )
     // actually is, which is what used to put Athens - Istanbul on an aircraft
     // over Prague. Idempotent - a repeated call with the same aircraft does
     // nothing, and the answer is cached.
-    Route_Select(ac.callsign, ac.lat, ac.lon);
-    const RouteInfo* rt = Route_Get();
+    
+    // davame extrapolovanou pozici, ne tu až dvě minuty starou
+    Route_Select(ac.callsign, lat, lon);
+    const RouteInfo* rt = Route_Get( ac.callsign );
 
     // Route on TWO lines - "Z:" above "Do:". One line with an arrow between
     // the cities had to shrink to fit two names side by side and ended up
@@ -457,7 +448,7 @@ void display_aircraft_detail(Aircraft ac, int headerColor, float vzdalenost_km )
     // when it has to, because city names vary wildly ("Doha" against
     // "Frankfurt am Main"). Anything that still would not fit is cut and ends
     // with a full stop rather than running over the border.
-    if (Route_GetState() == ROUTE_WAIT) {
+    if (Route_GetState( ac.callsign ) == ROUTE_WAIT) {
       painter->printText( TW(S_ROUTE_WAIT) );
       painter->textLf();
     } else if (rt && (rt->from[0] || rt->to[0])) {
@@ -467,6 +458,9 @@ void display_aircraft_detail(Aircraft ac, int headerColor, float vzdalenost_km )
       painter->printText( l1 );
       painter->textLf();
       painter->printText( l2 );
+      painter->textLf();
+    } else {
+      painter->printText( TW(S_ROUTE_NONE) );
       painter->textLf();
     }
 
@@ -622,7 +616,7 @@ void ScreenPlanes_Draw() {
 
   double minDistance = 6000;
 
-  aircraft_detail_y = 20;
+  aircraft_detail_y = 5;
   long now = millis();
 
   // nejprve vykreslíme značky letadel od nejvzdálenějšího k nejbližšímu - tak ty nejbližší přepíšou ty vzdálenější
@@ -683,11 +677,16 @@ void ScreenPlanes_Draw() {
     // otherwise the aircraft would point the wrong direction.
     float screenTrack = list[i].track - (float)s_topDeg;
     while (screenTrack < 0.0f) screenTrack += 360.0f;
+
+    float feets = 0;
+    if( altKnown ) {
+      feets = list[i].altFt + ( list[i].baroRate * (now-adsb_last_fetch)/60000.0f );
+    }
     drawPlane(sx, sy, screenTrack, list[i].hasTrack,
-              altColor(list[i].altFt, altKnown));
+              altColor(feets, altKnown));
     
     // i pro značku letadla zarezervujeme prostor v Layoutu, aby jí další popisky nepřepsaly
-    Layout_Reserve(sx-10, sy-10, 20, 20);
+    Layout_Reserve(sx-14, sy-14, 28, 28);
 
     // kolem prvních tří uděláme barevné kolečko 
     if(x<3) {
@@ -752,10 +751,15 @@ void ScreenPlanes_Draw() {
     bool altKnown = (list[i].altFt > 0.0f);
     // The map is turned, so the icon heading has to be corrected the same way -
     // otherwise the aircraft would point the wrong direction.
-    
+  
     // pro první tři vypíšeme k nim detail vpravo
     if(x<3) {
-      display_aircraft_detail(list[i], colorByOrder(x), ordering[x].distanceKm  );
+      float feets = 0;
+      if( altKnown ) {
+        feets = list[i].altFt + ( list[i].baroRate * (now-adsb_last_fetch)/60000.0f );
+      }
+
+      display_aircraft_detail(list[i], colorByOrder(x), ordering[x].distanceKm , lat, lon, feets );
     }
 
     // Label under the icon: the callsign, or the ICAO address when the aircraft
@@ -811,7 +815,7 @@ void ScreenPlanes_Draw() {
 
 
   painter->setFont( &malePismo );      
-  painter->fillBackground( EG_BLACK );
+  painter->fillBackground( EG_BLACK, 1 );
   int tx = 1, ty = 26;
   
   // The line under the clock: normally the aircraft count, but an emergency
@@ -825,23 +829,44 @@ void ScreenPlanes_Draw() {
     snprintf(sub, sizeof(sub), "%s  %s", alertCode, what);
     gfx->setTextColor(C_YELLOW);
     painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, sub );
-    ty += 18;
+    ty += 17;
   }
 
   if (WiFi.status() != WL_CONNECTED || !s_dataOk) {
     gfx->setTextColor(C_YELLOW);
     painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, (char *)s_status.c_str() );
-    ty += 18;
+    ty += 17;
   } 
 
   snprintf(sub, sizeof(sub), "%s: %d", T(S_AIRCRAFT), shown );
   gfx->setTextColor( C_WHITE );
   painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, sub );
-  ty += 18;
+  ty += 17;
 
   sprintf(sub, "Zoom: %.0f km", range);
   gfx->setTextColor(C_WHITE);
   painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, sub );
+  ty += 17;
+
+
+  // doprava dolů
+  // první dvě minuty tu bude URL na webserver
+  // pak status načítání
+  tx=530; ty=463;
+  if( webUrl[0]!=0 && millis()<150000 ) {
+    painter->setFont( &vetsiPismo ); 
+    gfx->setTextColor(C_WHITE );
+    ty -= 6;
+    painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, webUrl );
+    painter->setFont( &malePismo ); 
+  } else {
+    int nacteni = (s_nextFetch-millis())/1000;
+    if( nacteni<0 || nacteni>1000 ) nacteni = 0;
+    sprintf(sub, "Načtení za %d sec", nacteni );
+    gfx->setTextColor(C_GRAY );
+    painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, sub );
+  }
+   
 
   // --- Altitude legend ---
   // The icon colour means nothing without a key. Four swatches in a continuous

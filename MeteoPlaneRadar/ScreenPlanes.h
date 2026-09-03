@@ -10,6 +10,10 @@
 #pragma once
 #include <Arduino.h>
 
+
+extern char webUrl[64];
+
+
 void ScreenPlanes_Enter();
 void ScreenPlanes_Draw();
 bool ScreenPlanes_Tick();                    // true = needs a redraw

@@ -66,7 +66,7 @@ static void toAscii(char* dst, size_t cap, const char* src) {
 //      odpoved uz zadnou kontrolu polohy neprojde.
 // Cisla odpovidaji tomu, jak dlouho drzi svou kes samotne adsb.lol.
 #define ROUTE_TTL_OK_MS    1200000UL   // 20 min - nalezena verohodna trasa
-#define ROUTE_TTL_NONE_MS    60000UL   // 1 min  - "trasa neni"; letadlo tesne
+#define ROUTE_TTL_NONE_MS   120000UL   // 2 min  - "trasa neni"; letadlo tesne
                                        // po vzletu ji casto dostane az pozdeji
 
 struct Entry {
@@ -74,15 +74,18 @@ struct Entry {
   RouteState    state   = ROUTE_IDLE;
   unsigned long stamp   = 0;    // millis() zapisu vysledku
   RouteInfo     info;
+  float lat;
+  float lon;
 };
 static Entry s_cache[ROUTE_CACHE_N];
 static int   s_next = 0;
 
-static char  s_wantKey[12] = "";   // co UI prave ukazuje
-static float s_wantLat = 0;        // poloha letadla - server podle ni pocita
-static float s_wantLon = 0;        // priznak "plausible"
-static bool  s_pending = false;
-static bool  s_changed = false;    // dorazil vysledek, obrazovka se ma prekreslit
+static Entry* findRequest() {
+  for (int i = 0; i < ROUTE_CACHE_N; i++)
+    if( s_cache[i].state==ROUTE_WAIT ) return &s_cache[i];
+  return nullptr;
+}
+
 
 static Entry* find(const char* key) {
   if (!key || !*key) return nullptr;
@@ -146,51 +149,33 @@ void Route_Select(const char* callsign, float lat, float lon) {
   // trasu neptame vubec. Drive se misto nej posilal ICAO hex a ten po
   // normalizaci vypada jako platny IATA let: "a31234" -> "A31234" je Aegean
   // Airlines 1234, takze letadlo nad Prahou dostalo trasu Atheny -> Istanbul.
-  if (!callsignSane(key)) { Route_Clear(); return; }
-
-  // Poloha se drzi cerstva i u uz vybraneho letadla - kdyby dotaz jeste cekal
-  // na volnou pamet nebo na WiFi, odejde s tou polohou, kterou ma letadlo ve
-  // chvili odeslani, ne s tou pri kliknuti.
-  s_wantLat = lat;
-  s_wantLon = lon;
-  if (strcmp(key, s_wantKey) == 0) return;      // uz ukazujeme prave tohle
-
-  strncpy(s_wantKey, key, sizeof(s_wantKey) - 1);
+  if (!callsignSane(key)) { return; }
 
   Entry* e = find(key);
   if (e && expired(e)) { *e = Entry(); e = nullptr; }   // stara odpoved se zahodi
   if (e) {
-    // Zaznam uz existuje. Kdyz je ve stavu ROUTE_WAIT, dotaz na nej se nikdy
-    // neprovedl: uzivatel vybral letadlo A, pak jeste pred Route_Tick() prepnul
-    // na B, ktere bylo v kesi, a tim se cekajici dotaz zahodil. Bez tohohle
-    // radku by A zustalo ve WAIT navzdy a pri navratu se uz nikdy nedotazalo.
-    s_pending = (e->state == ROUTE_WAIT);
+    // Zaznam uz existuje. Pokud ceka na nactenim, nastavime mu aktualni pozici.
+    if( e->state == ROUTE_WAIT ) {
+      e->lat = lat;
+      e->lon = lon;
+    }
     return;
   }
-  insert(key);
-  s_pending = true;
+  e = insert(key);
+  e->lat = lat;
+  e->lon = lon;  
 }
 
-void Route_Clear() {
-  s_wantKey[0] = '\0';
-  s_pending = false;
-}
-
-RouteState Route_GetState() {
-  Entry* e = find(s_wantKey);
+RouteState Route_GetState( const char* callsign ) {
+  Entry* e = find(callsign);
   return e ? e->state : ROUTE_IDLE;
 }
 
-const RouteInfo* Route_Get() {
-  Entry* e = find(s_wantKey);
+const RouteInfo* Route_Get( const char* callsign ) {
+  Entry* e = find(callsign);
   return (e && e->state == ROUTE_OK) ? &e->info : nullptr;
 }
 
-bool Route_TakeChanged() {
-  bool c = s_changed;
-  s_changed = false;
-  return c;
-}
 
 // --- Fetching ---------------------------------------------------------------
 // Vzdusna vzdalenost v km. Slouzi jen k porovnavani useku mezi sebou, takze
@@ -253,18 +238,12 @@ static int getJson(const char* url, JsonDocument& filter, JsonDocument& doc) {
 }
 
 void Route_Tick() {
-  if (!s_pending) return;
   if (WiFi.status() != WL_CONNECTED) return;
 
   if (!Net_HeapOk("ROUTE")) return;    // zkusi se znovu pristi kolo
 
-  s_pending = false;
-  Entry* e = find(s_wantKey);
+  Entry* e = findRequest();
   if (!e) return;
-  // Odsud dal uz kazda cesta zaznam zmeni (vysledek, "neni", nebo zahozeni po
-  // chybe), takze se priznak nastavuje jednou tady a ne ve ctyrech vetvich.
-  // Cely zbytek funkce je synchronni, nez se vrati, je hotovo.
-  s_changed = true;
 
   // Filtr pousti jen to, co se opravdu pouzije - dokument musi zustat maly.
   // U pole staci popsat prvni prvek, ArduinoJson ho aplikuje na vsechny.
@@ -280,7 +259,7 @@ void Route_Tick() {
   JsonDocument doc;
   char url[160];
   snprintf(url, sizeof(url), "%s/%s/%.4f/%.4f",
-           ROUTE_API_BASE, s_wantKey, s_wantLat, s_wantLon);
+           ROUTE_API_BASE, e->key, e->lat, e->lon );
   Serial.printf("TRASA %s: dotaz na %s\n", e->key, url);
   int code = getJson(url, filter, doc);
   if (code != HTTP_CODE_OK) {
@@ -329,8 +308,8 @@ void Route_Tick() {
   if (n > 2) {
     float bestD = 1e30f;
     for (int i = 0; i + 1 < n; i++) {
-      float d = haversineKm(s_wantLat, s_wantLon, aps[i]["lat"] | 0.0f, aps[i]["lon"] | 0.0f) +
-                haversineKm(s_wantLat, s_wantLon, aps[i + 1]["lat"] | 0.0f, aps[i + 1]["lon"] | 0.0f);
+      float d = haversineKm(e->lat, e->lon, aps[i]["lat"] | 0.0f, aps[i]["lon"] | 0.0f) +
+                haversineKm(e->lat, e->lon, aps[i + 1]["lat"] | 0.0f, aps[i + 1]["lon"] | 0.0f);
       if (d < bestD) { bestD = d; best = i; }
     }
   }

@@ -61,6 +61,7 @@ void UI_DrawStatusLine(int cy) {
   */
 
   int tx = 1, ty = 5;
+  gfx->setTextColor(C_WHITE);
   painter->setFont( &vetsiPismo );      
   painter->fillBackground( EG_BLACK );
   painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, txt );

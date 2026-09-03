@@ -54,9 +54,9 @@
   X(S_TYPE,          "ID",                 "ID",                 "Type") \
   X(S_FROM,          "Z",                  "Z",                  "From") \
   X(S_TO,            "Do",                 "Do",                 "To") \
-  X(S_ROUTE_WAIT,    "zjistuji trasu",     "zjišťuji trasu",     "looking up route") \
+  X(S_ROUTE_WAIT,    "zjistuji trasu",     "Zjišťuji trasu",     "looking up route") \
   X(S_SIGNAL_LOST,   "signal ztracen",     "signál ztracen",     "signal lost") \
-  X(S_UNKNOWN,       "neznamy",            "neznámý",            "unknown") \
+  X(S_UNKNOWN,       "neznamy",            "Neznámý",            "unknown") \
   X(S_EMERGENCY,     "NOUZE",              "NOUZE",              "EMERGENCY") \
   X(S_HIJACK,        "UNOS",               "ÚNOS",               "HIJACK") \
   X(S_RADIO_FAIL,    "BEZ RADIA",          "BEZ RÁDIA",          "RADIO FAIL") \
@@ -72,7 +72,8 @@
   X(S_POLLEN,        "Pyl",                "Pyl",                "Pollen") \
   X(S_TODAY,         "dnes",               "dnes",               "today") \
   X(S_LAT_LABEL,     "Zemepisna sirka",    "Zeměpisná šířka",    "Latitude") \
-  X(S_LON_LABEL,     "Zemepisna delka",    "Zeměpisná délka",    "Longitude")
+  X(S_LON_LABEL,     "Zemepisna delka",    "Zeměpisná délka",    "Longitude") \
+  X(S_ROUTE_NONE,    "Trasa neni dostupna",     "Trasa není dostupná",     "Route not available") 
 
 enum StrId : uint16_t {
 #define X(id, cz, czw, en) id,
