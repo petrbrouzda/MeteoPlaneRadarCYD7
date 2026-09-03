@@ -38,9 +38,10 @@ static const int   RANGE_COUNT = sizeof(RANGES_KM) / sizeof(RANGES_KM[0]);
 static int s_rangeIdx = 1;   // 25 km by default
 
 int currentZoom = 25;
-int maxPlanes = 15;
-int minPlanes = 10;
+int maxPlanes = 13;
+int minPlanes = 8;
 int maxZoom = 110;
+int minZoom = 5;
 static float currentRange() { return (float)currentZoom; }
 
 // Base poll interval by range. Larger areas return more data and are less
@@ -686,7 +687,7 @@ void ScreenPlanes_Draw() {
               altColor(list[i].altFt, altKnown));
     
     // i pro značku letadla zarezervujeme prostor v Layoutu, aby jí další popisky nepřepsaly
-    Layout_Reserve(sx-8, sy-8, 16, 16);
+    Layout_Reserve(sx-10, sy-10, 20, 20);
 
     // kolem prvních tří uděláme barevné kolečko 
     if(x<3) {
@@ -880,7 +881,7 @@ void ScreenPlanes_Draw() {
   }
   
   // přepočítáme zoom
-  if( shown > maxPlanes ) {
+  if( shown > maxPlanes && currentZoom > minZoom ) {
     // změna dolů je jednoduchá
     currentZoom -= 1;
     Serial.printf("ScreenPlanes: too many planes (%d), zoom in to %.0f km\n", shown, currentRange());
