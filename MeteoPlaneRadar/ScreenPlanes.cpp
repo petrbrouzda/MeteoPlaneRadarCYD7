@@ -37,7 +37,11 @@ static const float RANGES_KM[] = PLANE_RANGES_KM;
 static const int   RANGE_COUNT = sizeof(RANGES_KM) / sizeof(RANGES_KM[0]);
 static int s_rangeIdx = 1;   // 25 km by default
 
-static float currentRange() { return RANGES_KM[s_rangeIdx]; }
+int currentZoom = 25;
+int maxPlanes = 15;
+int minPlanes = 10;
+int maxZoom = 110;
+static float currentRange() { return (float)currentZoom; }
 
 // Base poll interval by range. Larger areas return more data and are less
 // time-critical, so they are polled less often - keeps us a light user of the
@@ -248,6 +252,7 @@ void ScreenPlanes_Enter() {
 
 long lastDraw = 0;
 long adsb_last_fetch;
+float lastRangeFetched = 0;
 
 bool ScreenPlanes_Tick() {
   if (WiFi.status() != WL_CONNECTED) { s_status = T(S_WIFI_WAIT); return false; }
@@ -260,7 +265,10 @@ bool ScreenPlanes_Tick() {
 
   if (millis() >= s_nextFetch) {
     s_status = T(S_DOWNLOADING);
-    s_dataOk = ADSB_Fetch(Settings_Lat(), Settings_Lon(), currentRange());
+    // range zaokrouhlíme na 10 km nahoru
+    int range = ((int)(currentRange()/10.0)+1) * 10;
+    lastRangeFetched = (float)range;
+    s_dataOk = ADSB_Fetch(Settings_Lat(), Settings_Lon(), range );
     if( s_dataOk ) {
       adsb_last_fetch = millis();
     }
@@ -347,7 +355,7 @@ int colorByOrder(int x)
   switch(x)
   {
     case 0:
-      color = C_RED;
+      color = EG_MAGENTA;
       break;
     case 1:
       color = C_ORANGE;
@@ -362,7 +370,7 @@ int colorByOrder(int x)
 int aircraft_detail_y;
 
 
-void display_aircraft_detail(Aircraft ac, int headerColor )
+void display_aircraft_detail(Aircraft ac, int headerColor, float vzdalenost_km )
 {
     const bool metric = Settings_MetricUnits();
     gfx->setTextSize(1);
@@ -383,7 +391,10 @@ void display_aircraft_detail(Aircraft ac, int headerColor )
     // Same fallback as the map label: no callsign broadcast -> show the ICAO
     // address, which is at least something the user can look up. It is only
     // ever a caption; the route lookup below gets the callsign or nothing.
-    painter->printText(ac.callsign[0] ? ac.callsign : (ac.hex[0] ? ac.hex : "?"));
+    int offset = painter->printText(ac.callsign[0] ? ac.callsign : (ac.hex[0] ? ac.hex : "?"));
+    gfx->setTextColor( C_WHITE );
+    sprintf( line, " (%.1f km)", vzdalenost_km );
+    painter->printText( line, offset );
     painter->textLf();
 
     // painter->setFont(&malePismo);
@@ -502,7 +513,7 @@ void ScreenPlanes_Draw() {
   // Small size-1 letters at r = 205 slot in between the screen dots (y=18),
   // the status line (y=30), the aircraft count (y=52) and the range row.
   {
-    const int   cr = 205;
+    const int   cr = 230;
     const char* lbl[4] = { "S", "V", "J", "Z" };   // sever, vychod, jih, zapad
     const int   brg[4] = { 0, 90, 180, 270 };
     gfx->setTextSize(1);
@@ -511,7 +522,7 @@ void ScreenPlanes_Draw() {
       // Bearing b shows up at screen angle (b - topBearing).
       float a = (brg[i] - (int)s_topDeg) * 0.0174532925f;
       int cxp = R_CX + (int)(cr * sinf(a)) - 3;   // -3/-4 centres the glyph
-      int cyp = R_CY - (int)(cr * cosf(a)) - 4;
+      int cyp = R_CY - (int)(cr * cosf(a)) - 8;
       gfx->setCursor(cxp, cyp);
       gfx->print(lbl[i]);
     }
@@ -603,14 +614,6 @@ void ScreenPlanes_Draw() {
     }
   }
     
-  // Resolve the selection once per frame. If the aircraft has left the area it
-  // is simply not in the new data, so the detail closes by itself rather than
-  // silently latching onto whoever now sits at that index.
-  // Do NOT close the panel here - that is decided once per poll in Tick(), so
-  // the grace period actually lasts. While the aircraft is missing we keep
-  // drawing the last known values from the cache.
-  int selIdx = ADSB_FindByHex(s_selectedHex);
-
   painter->setFont(&vetsiPismo);
 
   const char* alertCode = nullptr;    // worst emergency seen this frame
@@ -618,11 +621,15 @@ void ScreenPlanes_Draw() {
 
   double minDistance = 6000;
 
-  // letadla kreslíme od nejbližšího k nejvzdálenějšímu, aby se label vzdálenějšího letadla nepřekreslil přes label letadla bližšího
   aircraft_detail_y = 20;
+  long now = millis();
+
+  // nejprve vykreslíme značky letadel od nejvzdálenějšího k nejbližšímu - tak ty nejbližší přepíšou ty vzdálenější
 
   int i = 0;
-  for (int x = 0; x < n; x++) {
+  for (int x = n-1; x >= 0; x--) {
+    if( ordering[x].distanceKm > currentRange() ) continue;
+
     i = ordering[x].idx;
 
     s_planeX[i] = -9999; s_planeY[i] = -9999;   // default: off-screen
@@ -649,7 +656,7 @@ void ScreenPlanes_Draw() {
           list[i].lon,
           list[i].gsKt,
           list[i].track,
-          (millis()-adsb_last_fetch)/1000.0f,
+          (now-adsb_last_fetch)/1000.0f,
           &lat,
           &lon
       );
@@ -679,14 +686,75 @@ void ScreenPlanes_Draw() {
               altColor(list[i].altFt, altKnown));
     
     // i pro značku letadla zarezervujeme prostor v Layoutu, aby jí další popisky nepřepsaly
-    Layout_Reserve(sx+2, sy+2, 13, 13);
+    Layout_Reserve(sx-8, sy-8, 16, 16);
 
-    // kolem prvních tří uděláme barevné kolečko a vypíšeme k nim detail vpravo
-    if(x<3)
-    {
-      int color = colorByOrder(x);
-      gfx->drawCircle(sx+1, sy+2, 18, color );   
-      display_aircraft_detail(list[i], color );
+    // kolem prvních tří uděláme barevné kolečko 
+    if(x<3) {
+      gfx->drawCircle(sx, sy+1, 18, colorByOrder(x) );   
+    }
+    
+    shown++;
+  }
+  
+  // a teď vypíšeme popisky k letadlům, od nejbližšího k nejvzdálenějšímu, aby se popisky nepřekrývaly
+
+  for (int x = 0; x < n; x++) {
+    if( ordering[x].distanceKm > currentRange() ) continue;
+
+    i = ordering[x].idx;
+
+    s_planeX[i] = -9999; s_planeY[i] = -9999;   // default: off-screen
+    s_planeHex[i][0] = '\0';
+    if (list[i].onGround) continue;
+
+    // Scan for emergencies and the watched aircraft before the filter, so
+    // neither can be hidden by an altitude setting.
+    const char* em = Settings_SquawkAlert() ? ADSB_EmergencyCode(list[i]) : nullptr;
+    const bool watched = isWatched(list[i]);
+    if (em && !alertCode) alertCode = em;
+    if (watched) watchedSeen = true;
+
+    if (!em && !watched && !passesFilter(list[i])) continue;
+
+    int sx, sy;
+    double lat, lon;
+    if( !list[i].hasTrack ) {
+      lat = list[i].lat;
+      lon = list[i].lon;
+    } else {
+      Geo_ProjectPosition(
+          list[i].lat,
+          list[i].lon,
+          list[i].gsKt,
+          list[i].track,
+          (now-adsb_last_fetch)/1000.0f,
+          &lat,
+          &lon
+      );
+    }
+
+    project(lat, lon, Settings_Lat(), Settings_Lon(), range, &sx, &sy);
+
+    int dx = sx - R_CX, dy = sy - R_CY;
+    if (dx * dx + dy * dy > R_RADIUS * R_RADIUS) continue;   // outside the circle
+    // Store position *and* identity, so a tap resolves to an aircraft and not
+    // to a list slot that may mean something else by the time it is used.
+    s_planeX[i] = sx; s_planeY[i] = sy;
+    strncpy(s_planeHex[i], list[i].hex, sizeof(s_planeHex[i]) - 1);
+    s_planeHex[i][sizeof(s_planeHex[i]) - 1] = '\0';
+    
+    // An emergency gets a red ring, a watched aircraft a green one. Both are
+    // drawn wider than the selection ring so they read at a glance.
+    if (em)      { gfx->drawCircle(sx, sy, 20, C_RED);   gfx->drawCircle(sx, sy, 21, C_RED); }
+    else if (watched) { gfx->drawCircle(sx, sy, 20, C_GREEN); gfx->drawCircle(sx, sy, 21, C_GREEN); }
+    // Altitude is only meaningful when the aircraft actually reports it.
+    bool altKnown = (list[i].altFt > 0.0f);
+    // The map is turned, so the icon heading has to be corrected the same way -
+    // otherwise the aircraft would point the wrong direction.
+    
+    // pro první tři vypíšeme k nim detail vpravo
+    if(x<3) {
+      display_aircraft_detail(list[i], colorByOrder(x), ordering[x].distanceKm  );
     }
 
     // Label under the icon: the callsign, or the ICAO address when the aircraft
@@ -713,22 +781,25 @@ void ScreenPlanes_Draw() {
       // aircraft close together used to print their labels straight through
       // each other, and near the rim one could land on the legend or the range
       // readout.
-      int tw = Layout_TextW(label, 1);
-      int tx = sx - tw / 2;
       int ty = sy + 16;
-      if (Layout_Claim(tx, ty, tw, 15)) {
+      int tx = sx;
+      int16_t x1, y1;
+      uint16_t w, h; 
+      painter->getTextBounds(label, tx, ty, &x1, &y1, &w, &h);
+      tx = sx - w/2;
+      if( tx<0 ) tx = 0;
+      if( tx+w > 480 ) tx = 480-w;
+      if (Layout_Claim(tx, ty, w, h)) {
         if(x<3) {
           gfx->setTextColor( colorByOrder(x) );
         } else {
           gfx->setTextColor( C_WHITE );
         }
         painter->setFont( &malePismo );      
-        painter->fillBackground( EG_BLACK );
+        painter->fillBackground( EG_BLACK, 1 );
         painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, label );
       }
     }
-
-    shown++;
   }
 
   // Top of the screen, under the screen-selector dots at y=18:
@@ -747,23 +818,26 @@ void ScreenPlanes_Draw() {
   // never overlap - the alert simply outranks the count.
   char sub[40];
   if (alertCode) {
-    const char* what = (strcmp(alertCode, SQUAWK_HIJACK) == 0) ? T(S_HIJACK)
-                     : (strcmp(alertCode, SQUAWK_RADIO)  == 0) ? T(S_RADIO_FAIL)
-                                                               : T(S_EMERGENCY);
+    const char* what = (strcmp(alertCode, SQUAWK_HIJACK) == 0) ? TW(S_HIJACK)
+                     : (strcmp(alertCode, SQUAWK_RADIO)  == 0) ? TW(S_RADIO_FAIL)
+                                                               : TW(S_EMERGENCY);
     snprintf(sub, sizeof(sub), "%s  %s", alertCode, what);
-    gfx->setTextColor(C_WHITE);
-    painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, sub );
-  } else if (WiFi.status() != WL_CONNECTED || !s_dataOk) {
     gfx->setTextColor(C_YELLOW);
-    painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, (char *)s_status.c_str() );
-  } else {
-    snprintf(sub, sizeof(sub), "%s: %d%s", T(S_AIRCRAFT), shown,
-             watchedSeen ? " *" : "");
-    gfx->setTextColor(watchedSeen ? C_GREEN : C_CYAN);
     painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, sub );
+    ty += 18;
   }
 
+  if (WiFi.status() != WL_CONNECTED || !s_dataOk) {
+    gfx->setTextColor(C_YELLOW);
+    painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, (char *)s_status.c_str() );
+    ty += 18;
+  } 
+
+  snprintf(sub, sizeof(sub), "%s: %d", T(S_AIRCRAFT), shown );
+  gfx->setTextColor( C_WHITE );
+  painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, sub );
   ty += 18;
+
   sprintf(sub, "Zoom: %.0f km", range);
   gfx->setTextColor(C_WHITE);
   painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, sub );
@@ -779,7 +853,7 @@ void ScreenPlanes_Draw() {
     const int sw = 26;                 // swatch width
     const int barW = 4 * sw;
     const int lx = 0;
-    const int ly = 450;
+    const int ly = 455;
 
     // Continuous bar - the bands abut, matching the fact that the altitude
     // ranges themselves are contiguous with no gaps between them.
@@ -793,14 +867,33 @@ void ScreenPlanes_Draw() {
     for (int i = 0; i < 3; i++) {
       int edge = lx + (i + 1) * sw;              // border between band i and i+1
       int tw = strlen(bounds[i]) * 6;
-      gfx->setCursor(edge - tw / 2, ly + 10);
+      gfx->setCursor(edge - tw / 2, ly + 8);
       gfx->print(bounds[i]);
     }
     // Unit, just past the right end of the bar.
-    gfx->setCursor(lx + barW + 4, ly + 10);
+    gfx->setCursor(lx + barW + 4, ly + 8);
     gfx->print("km");
-  }
 
+    gfx->setTextColor(C_GRAY);
+    painter->noBackground();
+    painter->printLabel( TextPainter::ALIGN_LEFT, lx, ly-19, (char*)"Výška" );    
+  }
+  
+  // přepočítáme zoom
+  if( shown > maxPlanes ) {
+    // změna dolů je jednoduchá
+    currentZoom -= 1;
+    Serial.printf("ScreenPlanes: too many planes (%d), zoom in to %.0f km\n", shown, currentRange());
+  }
+  if( shown < minPlanes ) {
+    // Nahoru můžeme snadno jen do lastRangeFetched, pak už se nám počet letadel nezvětší
+    // Maximum je tedy lastRangeFetched + 1, abychom při příštím načítání načetli o 10 km více.
+    // ale jen do stropu maxZoom
+    if( currentZoom < (lastRangeFetched + 1)  &&   currentZoom < maxZoom) {
+      currentZoom += 1;
+      Serial.printf("ScreenPlanes: too few planes (%d), zoom out to %.0f km\n", shown, currentRange());
+    }
+  }
   
 /*
   // Range indicator at the bottom (moved up a little to leave room for the

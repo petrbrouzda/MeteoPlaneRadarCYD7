@@ -10,6 +10,9 @@ Změny proti originálu pro 2.1" displej:
 * label letadla se kreslí s backgroundem, takže přepisuje popisky a čáry na pozadí
 * letadla se vykreslují od nejbližšího k nejvzdálenějšímu
 * vypisují se detaily tří nejbližších letadel
+* automatický zoom, který se snaží na obrazovce udržet 10-15 letadel
+* i pro značku letadla se zarezervuje prostor v Layoutu, aby jí popisky ostatních letadel nepřepsaly
+* vypisuje se dlouhý typ letadla (celý popis ve stylu "Boeing B373-800")
 
 
 TODO: Doplnit readme. 

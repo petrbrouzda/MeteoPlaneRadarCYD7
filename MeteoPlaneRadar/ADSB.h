@@ -40,7 +40,7 @@ struct Aircraft {
   char  squawk[6] = "";
   bool  onGround = false;
   bool  hasTrack = false;     // false = track unknown (drawn differently)
-  char  desc[20] = ""; 
+  char  desc[40] = ""; 
 };
 
 struct AircraftOrdering {

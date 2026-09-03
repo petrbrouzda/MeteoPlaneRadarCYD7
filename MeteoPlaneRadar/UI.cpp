@@ -60,7 +60,7 @@ void UI_DrawStatusLine(int cy) {
   UI_TextCentered(txt, cy, C_WHITE, 2);
   */
 
-  int tx = 5, ty = 5;
+  int tx = 1, ty = 5;
   painter->setFont( &vetsiPismo );      
   painter->fillBackground( EG_BLACK );
   painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, txt );

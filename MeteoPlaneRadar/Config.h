@@ -379,7 +379,7 @@
 #define SQUAWK_RADIO  "7600"
 #define SQUAWK_EMERG  "7700"
 
-#define SCREEN_PLANES_REFRESH 1000
+#define SCREEN_PLANES_REFRESH 2000
 
 // ---------------------------------------------------------------------------
 //  Layout self-check

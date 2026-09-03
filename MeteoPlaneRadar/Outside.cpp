@@ -163,7 +163,7 @@ void Outside_StatusText(char* buf, size_t cap) {
     else snprintf(c, sizeof(c), "%d %s", deg, OUTSIDE_DEG_TEXT);
   }
 
-  if (t[0] && c[0]) snprintf(buf, cap, "%s   %s", t, c);
+  if (t[0] && c[0]) snprintf(buf, cap, "%s  %s", t, c);
   else if (t[0])    snprintf(buf, cap, "%s", t);
   else if (c[0])    snprintf(buf, cap, "%s", c);
 }

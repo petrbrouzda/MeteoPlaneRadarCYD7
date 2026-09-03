@@ -281,6 +281,7 @@ void Route_Tick() {
   char url[160];
   snprintf(url, sizeof(url), "%s/%s/%.4f/%.4f",
            ROUTE_API_BASE, s_wantKey, s_wantLat, s_wantLon);
+  Serial.printf("TRASA %s: dotaz na %s\n", e->key, url);
   int code = getJson(url, filter, doc);
   if (code != HTTP_CODE_OK) {
     // Neuspech se NEZAPAMATUJE: zaznam se z kese zahodi misto ulozeni jako
