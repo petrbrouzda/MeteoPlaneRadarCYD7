@@ -915,9 +915,15 @@ void ScreenPlanes_Draw() {
     // Nahoru můžeme snadno jen do lastRangeFetched, pak už se nám počet letadel nezvětší
     // Maximum je tedy lastRangeFetched + 1, abychom při příštím načítání načetli o 10 km více.
     // ale jen do stropu maxZoom
-    if( currentZoom < (lastRangeFetched + 1)  &&   currentZoom < maxZoom) {
-      currentZoom += 1;
-      Serial.printf("ScreenPlanes: too few planes (%d), zoom out to %.0f km\n", shown, currentRange());
+    if( currentZoom < maxZoom) {
+        if( currentZoom <= lastRangeFetched+0.1) {
+          currentZoom += 1;
+          Serial.printf("ScreenPlanes: too few planes (%d), zoom out to %.0f km\n", shown, currentRange());
+        } else if( currentZoom <= lastRangeFetched+1.1 ) {
+          currentZoom += 1;
+          s_nextFetch = millis();
+          Serial.printf("ScreenPlanes: too few planes (%d), zoom out to %.0f km, forcing fetch\n", shown, currentRange());
+        }
     }
   }
   

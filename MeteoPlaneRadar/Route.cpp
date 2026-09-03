@@ -94,7 +94,7 @@ static Entry* find(const char* key) {
   return nullptr;
 }
 
-// Je zaznam uz moc stary? Odecita se v unsigned, takze prsteneni millis()
+// Je zaznam uz moc stary? Odecita se v unsigned, takze preteceni millis()
 // po 49 dnech nevadi - a tenhle displej bezi nepretrzite, takze na to dojde.
 // Zamerne se NEvola z find(): kdyby zaznam vyprsel pod rukama zrovna
 // otevrenemu detailu, panel by zhasnul a Route_Select() by se uz nezeptal,
