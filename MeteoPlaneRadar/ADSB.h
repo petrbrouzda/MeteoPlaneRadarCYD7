@@ -40,7 +40,12 @@ struct Aircraft {
   char  squawk[6] = "";
   bool  onGround = false;
   bool  hasTrack = false;     // false = track unknown (drawn differently)
-  char  desc[20] = "";    
+  char  desc[20] = ""; 
+};
+
+struct AircraftOrdering {
+  int idx;
+  float distanceKm;
 };
 
 void   ADSB_SetPollFn(void (*fn)());
@@ -50,6 +55,7 @@ bool   ADSB_Fetch(double lat, double lon, float radiusKm);
 
 int    ADSB_Count();
 const Aircraft* ADSB_List();
+AircraftOrdering* ADSB_Ordering();
 
 // Look up an aircraft by its ICAO hex address. Returns the current index in the
 // list, or -1 if that aircraft is not in the latest data (it left the area, or

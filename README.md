@@ -1,4 +1,21 @@
-# MeteoPlaneRadar
+# MeteoPlaneRadarLovyan
+
+Patchovaná verze aplikace pro [7" CYD](https://s.click.aliexpress.com/e/_c4eQrU33)
+a grafickou knihovnu LovyanGFX.
+
+Není obsluha dotyku, neb moje cílové zařízení je nedotykové. 
+
+Změny proti originálu pro 2.1" displej:
+* přechod na vektorové fonty a češtinu
+* label letadla se kreslí s backgroundem, takže přepisuje popisky a čáry na pozadí
+* letadla se vykreslují od nejbližšího k nejvzdálenějšímu
+* vypisují se detaily tří nejbližších letadel
+
+
+TODO: Doplnit readme. 
+
+
+---
 
 **Hodiny, radar letadel, srážkový meteoradar a předpověď počasí na kulatém
 dotykovém displeji.** Běží na desce Waveshare ESP32-S3-Touch-LCD-2.1 a nastavuje

@@ -10,6 +10,13 @@
 #pragma once
 #include "LGFX_ESP32S3_RGB_ESP32-8048S070.h"
 
+#include "src/extgfx/TextPainter.h"
+#include "src/extgfx/BasicColors.h"
+
+extern TextPainter * painter;
+extern TpFontConfig malePismo;
+extern TpFontConfig vetsiPismo;
+
 // Colours (RGB565)
 #define C_BLACK  0x0000
 #define C_BLUE   0x001F
@@ -24,6 +31,10 @@
 
 extern LGFX_Sprite * gfx;
 extern LGFX * gfxReal;
+
+extern TpFontConfig malePismo;
+extern TpFontConfig vetsiPismo;
+extern TextPainter * painter;
 
 // Draw a WiFi QR code (for joining the AP). open=true -> open network.
 void UI_DrawWifiQR(const char* ssid, const char* password, bool open,

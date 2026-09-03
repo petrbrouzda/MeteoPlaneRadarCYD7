@@ -167,6 +167,9 @@ static void drawOneCity(const EuCity& c, ProjectFn project, int cx, int cy,
     // taken, try the other side of the dot before giving up.
     int bx0 = (tx < sx) ? (tx - 2) : (sx - 5);
     int bx1 = (tx < sx) ? (sx + 5) : (tx + tw + 2);
+    /*
+    Města BUDEME přepisovat popiskama, takže si nebudou claimovat místo v Layeru.
+    
     if (!Layout_Claim(bx0, ty - 2, bx1 - bx0 + 1, 12)) {
       int alt = (tx > sx) ? (sx - 9 - tw) : (sx + 9);
       int ax0 = (alt > sx) ? (sx - 5) : (alt - 2);
@@ -174,6 +177,7 @@ static void drawOneCity(const EuCity& c, ProjectFn project, int cx, int cy,
       if (!Layout_Claim(ax0, ty - 2, ax1 - ax0 + 1, 12)) return;   // both sides busy
       tx = alt;
     }
+    */
 
     gfx->fillCircle(sx, sy, 3, dotColor);
     gfx->setTextSize(1);

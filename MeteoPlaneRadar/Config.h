@@ -117,9 +117,9 @@
 // Degree symbol. The built-in font is 7-bit ASCII, so a real "°" may come out
 // as a random glyph; "degC" is the safe spelling. Flip to 1 only after checking
 // on the actual display that the character renders.
-#define OUTSIDE_DEG_SYMBOL 0
+#define OUTSIDE_DEG_SYMBOL 1
 #if OUTSIDE_DEG_SYMBOL
-  #define OUTSIDE_DEG_TEXT "\xB0C"
+  #define OUTSIDE_DEG_TEXT "°C"
 #else
   #define OUTSIDE_DEG_TEXT "degC"
 #endif

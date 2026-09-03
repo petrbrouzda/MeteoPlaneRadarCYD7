@@ -63,9 +63,9 @@
 FQBN: esp32:esp32:esp32s3:FlashSize=16M,PSRAM=opi
 
 ESP32 core 3.3.8
-Using library GFX Library for Arduino at version 1.6.7 in folder: E:\dev.moje\arduino\libraries\GFX_Library_for_Arduino 
-Using library SPI at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\SPI 
+
 Using library Wire at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\Wire 
+Using library LovyanGFX at version 1.2.28 in folder: E:\dev.moje\arduino\libraries\LovyanGFX 
 Using library ArduinoJson at version 7.1.0 in folder: E:\dev.moje\arduino\libraries\ArduinoJson 
 Using library WiFi at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WiFi 
 Using library Networking at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\Network 
@@ -122,6 +122,19 @@ Using library Hash at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Ar
 #include <LovyanGFX.hpp>
 
 #include "LGFX_ESP32S3_RGB_ESP32-8048S070.h"
+
+#include "fonts/PragatiNarrow-Regular16pt8b.h"
+#include "fonts/PragatiNarrow-Regular20pt8b.h"
+#include "fonts/FrederickatheGreat-Regular40pt8b.h"
+
+// nasledujici radek nakonfiguruje knihovnu pro Arduino_GFX
+#include "src/extgfx/TextPainter.h"
+#include "src/extgfx/BasicColors.h"
+
+TextPainter * painter;
+TpFontConfig malePismo;
+TpFontConfig vetsiPismo;
+
 
 static LGFX lcd;  
 LGFX * gfxReal = &lcd;
@@ -203,7 +216,10 @@ static void drawActive() {
     case SCREEN_FORECAST_I: ScreenForecast_Draw(); break;
     case SCREEN_SETTINGS_I: ScreenSettings_Draw(); break;
   }
-  drawScreenDots();
+
+  // v tento okamžik indikátor čísla stránky nepoužíváme
+  // drawScreenDots();
+
   // gfx->flush();    // hand the framebuffer over; Canvas16 switches to the other
   gfx->pushSprite(0, 0);
 }
@@ -350,18 +366,22 @@ void setup() {
   Layout_SelfTest();         // no-op unless LAYOUT_DEBUG is on
 
   gfxReal->init();
-  Serial.printf("Volna pamet: %u B\n", (unsigned)ESP.getFreeHeap());
 
   // brightness lze nastavit pouze na fyzickem zarizeni
   gfxReal->setBrightness(128);
   gfxReal->setColorDepth(16); 
   gfxReal->setRotation(0);
+  // Toto je nutné pro češtinu z TextPainteru, jinak se LovyanGFX snaží číst Latin2 jako UTF-8
+  gfxReal->setAttribute( cp437_switch, true );
+  gfxReal->setAttribute( utf8_switch, false );  
 
   // inicializace canvasu
   gfx->setPsram(true);
   gfx->createSprite(gfxReal->width(), gfxReal->height() );
-  Serial.printf("Volna pamet: %u B\n", (unsigned)ESP.getFreeHeap());
   gfx->setColorDepth(16); 
+  // Toto je nutné pro češtinu z TextPainteru, jinak se LovyanGFX snaží číst Latin2 jako UTF-8
+  gfx->setAttribute( cp437_switch, true );
+  gfx->setAttribute( utf8_switch, false );  
 
 //  gfx->setRotation(0);
   gfx->setTextWrap(false);
@@ -369,6 +389,10 @@ void setup() {
   //gfx->flush();
   gfx->pushSprite(0, 0);
   NightMode_Apply();          // now there is something to look at
+
+  painter = new TextPainter( gfx );
+  painter->createFontConfig( &malePismo, &PragatiNarrow_Regular16pt8b );
+  painter->createFontConfig( &vetsiPismo, &PragatiNarrow_Regular20pt8b );  
 
   checkBootReset();
 
@@ -515,3 +539,22 @@ void loop() {
   Settings_Tick();    // debounced persist of UI state to NVS
   Watchdog_Feed();
 }
+
+/*
+Using library Wire at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\Wire 
+Using library LovyanGFX at version 1.2.28 in folder: E:\dev.moje\arduino\libraries\LovyanGFX 
+Using library ArduinoJson at version 7.1.0 in folder: E:\dev.moje\arduino\libraries\ArduinoJson 
+Using library WiFi at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WiFi 
+Using library Networking at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\Network 
+Using library NetworkClientSecure at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\NetworkClientSecure 
+Using library HTTPClient at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\HTTPClient 
+Using library PNGdec at version 1.0.1 in folder: E:\dev.moje\arduino\libraries\PNGdec 
+Using library Preferences at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\Preferences 
+Using library WebServer at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\WebServer 
+Using library FS at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\FS 
+Using library DNSServer at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\DNSServer 
+Using library ESP32 Async UDP at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\AsyncUDP 
+Using library ESPmDNS at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\ESPmDNS 
+Using library Update at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\Update 
+Using library Hash at version 3.3.8 in folder: C:\Users\brouzda\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\libraries\Hash 
+*/

@@ -288,9 +288,13 @@ void Route_Tick() {
     // predpocitany (napr. DLH400 mimo cas letu), a zapamatovana chyba by
     // znamenala, ze uz se na nej do restartu nikdy nezeptame. Takhle se dotaz
     // zopakuje, jakmile uzivatel detail otevre znovu. Panel zatim neukaze nic.
+    
     char key[12]; strncpy(key, e->key, sizeof(key)); key[sizeof(key) - 1] = '\0';
-    *e = Entry();
+    // *e = Entry();
+
+    // Záznam se uloží, protože nechceme na server posílat dotaz pořád dokola, pokud je problém s připojením nebo serverem.
     Serial.printf("TRASA %s: dotaz selhal (%d)\n", key, code);
+    e->state = ROUTE_NONE; e->stamp = millis();
     return;
   }
 

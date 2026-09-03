@@ -11,11 +11,11 @@
 # The firmware version lives in MeteoPlaneRadar/Version.h, not here.
 profiles:
   default:
-    fqbn: esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M,PartitionScheme=custom,CDCOnBoot=cdc,FlashMode=qio
+    fqbn: esp32:esp32:esp32s3:FlashSize=16M,PSRAM=opi
     platforms:
-      - platform: esp32:esp32 (3.0.7)
+      - platform: esp32:esp32 (3.3.8)
     libraries:
-      - GFX Library for Arduino (1.4.9)
+      - LovyanGFX (1.2.28)
       - PNGdec (1.0.1)
       - ArduinoJson (7.1.0)
 
