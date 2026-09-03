@@ -66,7 +66,7 @@ static void toAscii(char* dst, size_t cap, const char* src) {
 //      odpoved uz zadnou kontrolu polohy neprojde.
 // Cisla odpovidaji tomu, jak dlouho drzi svou kes samotne adsb.lol.
 #define ROUTE_TTL_OK_MS    1200000UL   // 20 min - nalezena verohodna trasa
-#define ROUTE_TTL_NONE_MS   120000UL   // 2 min  - "trasa neni"; letadlo tesne
+#define ROUTE_TTL_NONE_MS   60000UL   // 1 min  - "trasa neni"; letadlo tesne
                                        // po vzletu ji casto dostane az pozdeji
 
 struct Entry {

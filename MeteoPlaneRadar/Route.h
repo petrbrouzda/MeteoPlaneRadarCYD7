@@ -40,8 +40,8 @@ enum RouteState : uint8_t {
 };
 
 struct RouteInfo {
-  char from[20] = "";   // "Prague", pripadne "PRG" kdyz mesto chybi
-  char to[20]   = "";
+  char from[30] = "";   // "Prague", pripadne "PRG" kdyz mesto chybi
+  char to[30]   = "";
 };
 
 // Zeptej se na tuto trasu. Levne a idempotentni: opakovane volani se stejnym
