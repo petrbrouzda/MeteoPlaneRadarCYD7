@@ -1,4 +1,4 @@
-# MeteoPlaneRadarLovyan
+# MeteoPlaneRadarCYD7
 
 Patchovaná verze aplikace pro [7" CYD](https://s.click.aliexpress.com/e/_c4eQrU33)
 a grafickou knihovnu LovyanGFX.
