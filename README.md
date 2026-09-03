@@ -1,9 +1,7 @@
 # MeteoPlaneRadarCYD7
 
 Patchovaná verze aplikace pro [7" CYD](https://s.click.aliexpress.com/e/_c4eQrU33)
-a grafickou knihovnu LovyanGFX.
-
-Není obsluha dotyku, neb moje cílové zařízení je nedotykové. 
+a grafickou knihovnu LovyanGFX (ale úpravy jsou automaticky kompatibilní s Arduino GFX i Adafruit GFX).
 
 Změny proti originálu pro 2.1" displej:
 * přechod na vektorové fonty a češtinu
@@ -15,6 +13,8 @@ Změny proti originálu pro 2.1" displej:
 * vypisuje se dlouhý typ letadla (celý popis ve stylu "Boeing B373-800")
 * vpravo dole se vypisuje, z jak dlouho se načtou nová data (a první dvě minuty URL na konfiguraci)
 * extrapolace výšky letadla
+
+Není obsluha dotyku, neb moje cílové zařízení je nedotykové. 
 
 TODO: Doplnit readme. 
 
