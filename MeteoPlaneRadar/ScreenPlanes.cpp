@@ -18,6 +18,7 @@
 #include "Lang.h"
 #include "Status.h"
 #include "Geo.h"
+#include "Outside.h"
 
 #include <WiFi.h>
 #include <math.h>
@@ -807,16 +808,24 @@ void ScreenPlanes_Draw() {
     }
   }
 
-  // Top of the screen, under the screen-selector dots at y=18:
-  //   y 30..45  clock + outside temperature (size 2, the same as the range)
-  //   y 52..59  aircraft count (size 1 - it is a secondary number)
-  //   y 74      altitude legend
-  UI_DrawStatusLine(LY_STATUS);
-
+  // status line doleva nahoru jinak nez na ostatnich obrazovkach
+  
+  char txt[20];
+  Outside_StatusText(txt, sizeof(txt));
+  if (!txt[0]) return;                      // nothing known yet - leave it empty
+  char *p = strstr( txt, "degC");
+  if( p!=0 ) {
+    strcpy( p, "°C");
+  }
+  
+  int tx = 1, ty = 5;
+  gfx->setTextColor(C_WHITE);
+  painter->setFont( &vetsiPismo );      
+  painter->fillBackground( EG_BLACK,1 );
+  painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, txt );
 
   painter->setFont( &malePismo );      
-  painter->fillBackground( EG_BLACK, 1 );
-  int tx = 1, ty = 26;
+  ty = 26;
   
   // The line under the clock: normally the aircraft count, but an emergency
   // squawk takes it over. There is exactly one line for this, so the two can

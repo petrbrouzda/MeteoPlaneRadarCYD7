@@ -129,6 +129,7 @@ static void drawSecondsRing(int sec) {
 }
 
 void ScreenClock_Draw() {
+  gfx->setFont( NULL );
   gfx->fillScreen(C_BLACK);
   Layout_Begin();
 

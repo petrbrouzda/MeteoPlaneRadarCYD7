@@ -559,6 +559,7 @@ bool ScreenWeather_Tick() {
 }
 
 void ScreenWeather_Draw() {
+  gfx->setFont( NULL );
   gfx->fillScreen(C_BLACK);
   Layout_Begin();
 

@@ -113,6 +113,7 @@ bool ScreenSettings_HandleTap(int x, int y) {
 }
 
 void ScreenSettings_Draw() {
+  gfx->setFont( NULL );
   gfx->fillScreen(C_BLACK);
   Layout_Begin();
   Layout_ReserveBand(LY_DOTS - 6, 12);

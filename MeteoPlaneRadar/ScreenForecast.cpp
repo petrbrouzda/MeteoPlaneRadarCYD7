@@ -205,6 +205,7 @@ static void aqRow(int y, const char* label, const char* value, uint16_t valCol) 
 }
 
 void ScreenForecast_Draw() {
+  gfx->setFont( NULL );
   gfx->fillScreen(C_BLACK);
   Layout_Begin();
 

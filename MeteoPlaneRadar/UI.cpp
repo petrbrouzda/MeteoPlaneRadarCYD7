@@ -42,7 +42,6 @@ void UI_DrawStatusLine(int cy) {
   Outside_StatusText(txt, sizeof(txt));
   if (!txt[0]) return;                      // nothing known yet - leave it empty
 
-  /*
   // Measure against the circle at the LOWER edge of the text, which is the
   // narrower end. The longest string this can produce is "23:59   -12 degC"
   // (~192 px at size 2) and the chord here is around 265 px, so it fits - but
@@ -58,13 +57,7 @@ void UI_DrawStatusLine(int cy) {
   // image, where white on yellow rain would be unreadable.
   gfx->fillRect(LCD_WIDTH / 2 - (int)tw / 2 - 6, cy - 3, (int)tw + 12, 22, C_BLACK);
   UI_TextCentered(txt, cy, C_WHITE, 2);
-  */
 
-  int tx = 1, ty = 5;
-  gfx->setTextColor(C_WHITE);
-  painter->setFont( &vetsiPismo );      
-  painter->fillBackground( EG_BLACK );
-  painter->printLabel( TextPainter::ALIGN_LEFT, tx, ty, txt );
 }
 
 
